@@ -1,0 +1,69 @@
+clear;close all;clc
+
+path = 'C:\Users\MSalehjahromi\ZipingRongqin\2_Matching_cohort\CT_NLST\10_002_333333.nii.gz';
+V = niftiread(path);
+V = V(:,:,20);
+% V(1:100,:)=-1300;
+% V(412:512,:)=-1300;
+% V(:,1:100)=-1300;
+% V(:,412:512)=-1300;
+figure(1)
+imshow(V, [-1000,200])
+
+%% PARAMETERS 
+params.Dsource2centr = 165;
+params.Dsource2detec = 180;
+
+params.NumofView     = 4;
+params.NumofBin      = 800;       % number of detector bins
+params.pixelsize     = 0.05;
+params.binsize       = 0.05;
+params.binshift      = 0  ;         % detector shift, mm
+
+params.reconsize     = 512;
+
+params.im = ones(512,512);% V;
+Proj = projdd(params);
+figure(2)
+imshow(Proj,[])
+
+%% Adding Noise   "ProjEnergy_noisy"
+
+% nSend_CHNL = 2e3;
+% 
+% nReceive          =    zeros(params.NumofBin,params.NumofView,1);
+% nReceive_hat      =    zeros(params.NumofBin,params.NumofView,1);
+% ProjEnergy_noisy  =    zeros(params.NumofBin,params.NumofView,1);
+% 
+% nReceive(:,:,1) = (  nSend_CHNL(1)  ) * exp( -Proj(:,:,1)  );
+% nReceive_hat(:,:,1) =   poissrnd(  nReceive(:,:,1)  );
+% ProjEnergy_noisy(:,:,1) = - log(  nReceive_hat(:,:,1)  /  nSend_CHNL(1)  );
+% 
+% ProjEnergy_noisyPix06_2e3=ProjEnergy_noisy;
+%save('ProjEnergy_noisyPix06_2e3.mat','Proj1_4Noise_free','ProjEnergy_noisyPix06_2e3','params');
+
+%%
+Proj_t = -log(Proj);
+Proj1 = reshape(flipud(Proj),params.NumofBin,1,params.NumofView );
+%%Input proj of real data
+%         load('ProjReal1_8.mat')
+proj=rot90(Proj1,-1);%imshow(proj,[])
+NumofRoudown=params.NumofBin;
+Proj1 = reshape(fliplr(rot90(proj)),NumofRoudown,1,params.NumofView );
+
+R=params.Dsource2centr;
+d=params.Dsource2detec-params.Dsource2centr;
+du=params.binsize  ;
+dv= params.binsize  ;
+
+coef = 1;
+pixelsize = coef* params.pixelsize  ;
+Reconsize=512/coef;
+[RecoResult1]=MortezaEquiDistanceRealDATA(Proj1,R,d,du,dv,pixelsize,Reconsize);
+
+figure(3);
+imshow(rot90(RecoResult1,-1),[-1000,200])
+
+
+
+
